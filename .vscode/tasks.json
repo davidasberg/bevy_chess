@@ -1,0 +1,43 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "cargo build dynamic linking",
+            "type": "cargo",
+            "command": "build",
+            "args": [
+                "--features",
+                "bevy/dynamic_linking"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+        },
+        {
+            "label": "cargo build",
+            "type": "cargo",
+            "command": "build",
+            "args": [],
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+        },
+        {
+            "label": "cargo build release",
+            "type": "cargo",
+            "command": "build",
+            "args": [
+                "--release"
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+        }
+    ]
+}

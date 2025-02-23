@@ -1,0 +1,62 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Dynamic Linking",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/target/debug/${workspaceFolderBasename}.exe",
+            "cwd": "${workspaceRoot}",
+            "environment": [
+                {
+                    "name": "CARGO_MANIFEST_DIR",
+                    "value": "${workspaceFolder}"
+                },
+                {
+                    "name": "PATH",
+                    "value": "%USERPROFILE%/.rustup/toolchains/nightly-x86_64-pc-windows-msvc/bin;${workspaceFolder}/target/debug/deps;%PATH%"
+                },
+            ],
+            "preLaunchTask": "cargo build dynamic linking",
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "Debug",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/target/debug/${workspaceFolderBasename}.exe",
+            "cwd": "${workspaceRoot}",
+            "environment": [
+                {
+                    "name": "CARGO_MANIFEST_DIR",
+                    "value": "${workspaceFolder}"
+                },
+                {
+                    "name": "PATH",
+                    "value": "%{env:USERPROFILE}%/.rustup/toolchains/nightly-x86_64-pc-windows-msvc/bin;${workspaceFolder}/target/debug/deps;${env:PATH}"
+                },
+            ],
+            "preLaunchTask": "cargo build",
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "Debug release",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/target/debug/${workspaceFolderBasename}.exe",
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "CARGO_MANIFEST_DIR",
+                    "value": "${workspaceFolder}"
+                },
+                {
+                    "name": "PATH",
+                    "value": "%{env:USERPROFILE}%/.rustup/toolchains/nightly-x86_64-pc-windows-msvc/bin;${workspaceFolder}/target/debug/deps;${env:PATH}"
+                },
+            ],
+            "preLaunchTask": "cargo build release",
+            "console": "integratedTerminal",
+        }
+    ]
+}
