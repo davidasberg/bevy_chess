@@ -16,6 +16,9 @@ log = { version = "*", features = [
     "release_max_level_warn",
 ] }
 
+[features]
+dynamic_linking = ["bevy/dynamic_linking"]
+
 [workspace]
 resolver = "2"
 

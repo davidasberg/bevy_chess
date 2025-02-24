@@ -7,7 +7,7 @@
             "command": "build",
             "args": [
                 "--features",
-                "bevy/dynamic_linking"
+                "dynamic_linking"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
