@@ -1,8 +1,11 @@
 use std::f32::consts::FRAC_PI_2;
 
 use bevy::{
+    color::palettes::tailwind::*,
     input::mouse::AccumulatedMouseMotion,
+    picking::pointer::PointerInteraction,
     prelude::*,
+    scene::{SceneInstance, SceneInstanceReady},
     window::{CursorGrabMode, PrimaryWindow},
 };
 use bevy_inspector_egui::{bevy_egui::EguiContext, quick::WorldInspectorPlugin};
@@ -24,8 +27,8 @@ impl Plugin for GamePlugin {
 
         app.add_plugins((MeshPickingPlugin, WorldInspectorPlugin::default()));
 
-        app.add_systems(Startup, (setup_camera, setup_board));
-        app.add_systems(Update, move_camera);
+        app.add_systems(Startup, (setup_camera, setup_lights, setup_board));
+        app.add_systems(Update, (/*move_camera,*/draw_mesh_intersections));
     }
 }
 
@@ -36,8 +39,19 @@ fn setup_camera(mut commands: Commands) {
             hdr: true,
             ..default()
         },
-        Transform::from_translation(Vec3::new(0.0, 5.0, 5.0))
+        Transform::from_translation(Vec3::new(0.0, 1.5, 1.5))
             .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
+    ));
+}
+
+fn setup_lights(mut commands: Commands) {
+    commands.spawn((
+        DirectionalLight {
+            illuminance: 10000.0,
+            shadows_enabled: true,
+            ..default()
+        },
+        Transform::from_xyz(4.0, 8.0, 4.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 }
 
@@ -48,17 +62,69 @@ struct Board;
 fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
     let board = SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset("ChessBoard.glb")));
 
-    commands.spawn((board, Name::new("Board"), Board));
+    commands
+        .spawn((board, Name::new("Board"), Board))
+        .observe(on_board_added);
 }
 
-// fn on_board_added(
-//     mut commands: Commands,
-//     board: Query<Entity, (With<Board>, Added<SceneInstance>)>,
-//     mut meshes: ResMut<Assets<Mesh>>,
-//     mut materials: ResMut<Assets<StandardMaterial>>,
+fn on_board_added(
+    trigger: Trigger<SceneInstanceReady>,
+    children: Query<&Children>,
+    mut commands: Commands,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mesh3ds: Query<&Mesh3d>,
+) {
+    // Set up the materials.
+    let white_matl = materials.add(Color::WHITE);
+    let ground_matl = materials.add(Color::from(GRAY_300));
+    let hover_matl = materials.add(Color::from(CYAN_300));
+    let pressed_matl = materials.add(Color::from(YELLOW_300));
 
-// ) {
-//     if let Ok(entity) = board.get_single() {
+    let entity = trigger.entity();
+    for child in children.iter_descendants(entity) {
+        if mesh3ds.get(child).is_ok() {
+            commands
+                .entity(child)
+                // .observe(update_material_on::<Pointer<Over>>(hover_matl.clone()))
+                // .observe(update_material_on::<Pointer<Out>>(white_matl.clone()))
+                // .observe(update_material_on::<Pointer<Down>>(pressed_matl.clone()))
+                // .observe(update_material_on::<Pointer<Up>>(hover_matl.clone()))
+                .observe(rotate_on_drag);
+        }
+    }
+}
+
+/// Returns an observer that updates the entity's material to the one specified.
+fn update_material_on<E>(
+    new_material: Handle<StandardMaterial>,
+) -> impl Fn(Trigger<E>, Query<&mut MeshMaterial3d<StandardMaterial>>) {
+    // An observer closure that captures `new_material`. We do this to avoid needing to write four
+    // versions of this observer, each triggered by a different event and with a different hardcoded
+    // material. Instead, the event type is a generic, and the material is passed in.
+    move |trigger, mut query| {
+        if let Ok(mut material) = query.get_mut(trigger.entity()) {
+            material.0 = new_material.clone();
+        }
+    }
+}
+
+/// A system that draws hit indicators for every pointer.
+fn draw_mesh_intersections(pointers: Query<&PointerInteraction>, mut gizmos: Gizmos) {
+    for (point, normal) in pointers
+        .iter()
+        .filter_map(|interaction| interaction.get_nearest_hit())
+        .filter_map(|(_entity, hit)| hit.position.zip(hit.normal))
+    {
+        gizmos.sphere(point, 0.05, RED_500);
+        gizmos.arrow(point, point + normal.normalize() * 0.5, PINK_100);
+    }
+}
+
+/// An observer to rotate an entity when it is dragged
+fn rotate_on_drag(drag: Trigger<Pointer<Drag>>, mut transforms: Query<&mut Transform>) {
+    let mut transform = transforms.get_mut(drag.entity()).unwrap();
+    transform.rotate_y(drag.delta.x * 0.02);
+}
 
 fn move_camera(
     mouse_input: Res<AccumulatedMouseMotion>,
